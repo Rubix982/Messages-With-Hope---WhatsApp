@@ -1,7 +1,7 @@
 const path = require('path');
 
 if (!process.env.CI) {
-  require('dotenv-safe').config({
+  require('dotenv').config({
     path:
       process.env.NODE_ENV === 'test'
         ? path.resolve(__dirname, '../.env.example')
