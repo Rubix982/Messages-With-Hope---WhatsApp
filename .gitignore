@@ -26,6 +26,9 @@ build/Release
 # Dependency directory
 node_modules
 
+# npm build artifact
+npm-debug.log
+
 # Optional npm cache directory
 .npm
 
@@ -37,3 +40,7 @@ node_modules
 .env
 
 _data/db.json
+
+# Docker
+Dockerfile
+docker-compose.yml

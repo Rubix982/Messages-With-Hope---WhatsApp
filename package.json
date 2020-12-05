@@ -1,5 +1,5 @@
 {
-  "name": "sample-template-node",
+  "name": "messages-with-hope---whatsapp",
   "version": "1.0.0",
   "private": true,
   "main": "./src/index.js",
@@ -16,20 +16,26 @@
     "format": "eslint . --fix",
     "dev": "nodemon ."
   },
-  "description": "Node.js template for Twilio sample apps",
+  "description": "The WhatsApp module for Messages With Hope, by Team Ignitors.",
   "author": {
-    "name": "Twilio",
-    "email": "open-source@twilio.com"
+    "name": "Team Ignitors",
+    "email": "saifulislam84210@gmail.com"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/twilio-labs/sample-template-node"
+    "url": "https://github.com/Rubix982/Messages-With-Hope---WhatsApp"
   },
   "keywords": [
     "node",
     "twilio",
-    "express"
+    "express",
+    "bot",
+    "whatsapp",
+    "health",
+    "ambulance",
+    "service",
+    "hackathon"
   ],
   "engines": {
     "node": ">=10.x"
