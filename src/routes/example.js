@@ -28,15 +28,16 @@ router.post('/send-sms', async (req, res, next) => {
   const { To, From, Body } = req.body;
   console.log(To, From, Body);
   try {
-    const { MessageSid } = await client.messages.create({
+    await client.messages.create({
       from: To,
       to: From,
       body: 'hey! this is the default reply. Please checkout with Saif how this can be improved. Thanks!',
-    }).then(message => console.log(message.sid));
-
-    res.send({
-      status: 'success',
-      message: `SMS sent to ${From}. Message SID: ${MessageSid}`,
+    }).then((message) => {
+      console.log(message.sid)
+      res.send({
+        status: 'success',
+        message: `SMS sent to ${From}. Message SID: ${message.sid}`,
+      })
     });
   } catch (err) {
     console.error(err);
