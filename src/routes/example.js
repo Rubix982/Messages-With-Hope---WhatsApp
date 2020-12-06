@@ -32,26 +32,21 @@ router.post('/send-sms', (req, res, next) => {
   console.log(req);
   console.log(req.body);
   const { To, From, Body} = req.body;
-  console(To, From, Body);
-  // const { To, Body } = req.body;
-  // try {
-  //     client.messages.create({
-  //     from: 'whatsapp:' + cfg.twilioPhoneNumber,
-  //     to: To,
-  //     body: Body,
-  //   }).then(message => console.log(message.sid));
-
-  //   res.send({
-  //     status: 'success',
-  //     message: `SMS sent to ${req.body.to}.`,
-  //   });
-  // } catch (err) {
-  //   console.error(err);
-  //   res.status(500).send({
-  //     status: 'error',
-  //     message: 'Failed to send SMS. Check server logs for more details.',
-  //   });
-  // }
+  console.log(To, From, Body);
+  const { To, Body } = req.body;
+  try {
+      client.messages.create({
+      from: 'whatsapp:' + cfg.twilioPhoneNumber,
+      to: To,
+      body: Body,
+    }).then(message => console.log(message.sid));
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({
+      status: 'error',
+      message: 'Failed to send SMS. Check server logs for more details.',
+    });
+  }
 });
 
 module.exports = router;
