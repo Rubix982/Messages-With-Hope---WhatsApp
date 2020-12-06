@@ -22,7 +22,7 @@ router.get('/example', (req, res, next) => {
 });
 
 // POST: /send-sms
-router.post('/send-sms', async (req, res, next) => {
+router.post('/send-sms', (req, res, next) => {
   const { To, From, Body } = req.body;
   console.log(To, From, Body);
   try {
