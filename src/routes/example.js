@@ -26,9 +26,9 @@ router.post('/send-sms', async (req, res, next) => {
   const { To, Body } = req.body;
   try {
     const { MessageSid } = await client.messages.create({
-      From: cfg.twilioPhoneNumber,
-      To,
-      Body,
+      from: cfg.twilioPhoneNumber,
+      to: To,
+      body: Body,
     });
 
     res.send({
