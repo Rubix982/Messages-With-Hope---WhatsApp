@@ -34,11 +34,11 @@ router.post('/send-sms', async (req, res, next) => {
       body: 'hey! this is the default reply. Please checkout with Saif how this can be improved. Thanks!',
     }).then((message) => {
       console.log(message.sid)
-      res.send({
+      res.status(200).send({
         status: 'success',
         message: `SMS sent to ${From}. Message SID: ${message.sid}`,
       })
-    });
+    }).done();
   } catch (err) {
     console.error(err);
     res.status(500).send({
@@ -46,10 +46,6 @@ router.post('/send-sms', async (req, res, next) => {
       message: 'Failed to send SMS. Check server logs for more details.',
     });
   }
-});
-
-router.post('/message', async (req, res, next) => {
-  const { To, From, Body } = req.body;
 });
 
 module.exports = router;
