@@ -48,4 +48,8 @@ router.get('/message', async (req, res, next) => {
   console.log(req.body);
 });
 
+router.post('/message', async (req, res, next) => {
+  console.log(req.body);
+});
+
 module.exports = router;
