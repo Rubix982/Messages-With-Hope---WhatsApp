@@ -44,3 +44,6 @@ _data/db.json
 # Docker
 Dockerfile
 docker-compose.yml
+
+# MISC files
+MISC.txt
