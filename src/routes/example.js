@@ -29,7 +29,10 @@ router.get('/example', (req, res, next) => {
 
 // POST: /send-sms
 router.post('/send-sms', (req, res, next) => {
+  console.log(req);
   console.log(req.body);
+  const { To, From, Body} = req.body;
+  console(To, From, Body);
   // const { To, Body } = req.body;
   // try {
   //     client.messages.create({
