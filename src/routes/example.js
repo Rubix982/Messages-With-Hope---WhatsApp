@@ -30,8 +30,8 @@ router.post('/send-sms', async (req, res, next) => {
   console.log(To, From, Body);
   try {
     const { MessageSid } = await client.messages.create({
-      from: String(From),
-      to: String(To),
+      from: String(To),
+      to: String(From),
       body: String(Body),
     });
 
