@@ -26,7 +26,7 @@ router.post('/send-sms', (req, res, next) => {
   const { To, From, Body } = req.body;
   console.log(To, From, Body);
   const responseObject = {
-    from: `whatsapp:${cfg.twilioPhoneNumber}`,
+    from: To,
     to: From,
     body: 'hey! this is the default reply. Please checkout with Saif how this can be improved. Thanks!'
   }
