@@ -9,8 +9,6 @@ const client = twilio(cfg.twilioAccountSid, cfg.twilioAuthToken);
 /* eslint-disable new-cap */
 const router = express.Router();
 
-console.log(cfg);
-
 // GET: /
 router.get('/', (req, res, next) => {
   res.render('index', { title: 'Template App', scripts: ['js/send-sms.js'] });
@@ -29,8 +27,8 @@ router.post('/send-sms', async (req, res, next) => {
   console.log(To, From, Body);
   try {
     await client.messages.create({
-      from: To,
-      to: From,
+      from: String(To),
+      to: String(From),
       body: 'hey! this is the default reply. Please checkout with Saif how this can be improved. Thanks!',
     }).then((message) => {
       console.log(message.sid)
