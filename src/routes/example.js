@@ -26,18 +26,17 @@ router.get('/example', (req, res, next) => {
 // POST: /send-sms
 router.post('/send-sms', async (req, res, next) => {
   const { To, From, Body } = req.body;
-  console.log(req.body);
   console.log(To, From, Body);
   try {
     const { MessageSid } = await client.messages.create({
-      from: String(To),
-      to: String(From),
-      body: String(Body),
-    });
+      from: To,
+      to: From,
+      body: Body,
+    }).then(message => console.log(message.sid));
 
     res.send({
       status: 'success',
-      message: `SMS sent to ${req.body.To}. Message SID: ${MessageSid}`,
+      message: `SMS sent to ${From}. Message SID: ${MessageSid}`,
     });
   } catch (err) {
     console.error(err);
