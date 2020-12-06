@@ -23,25 +23,26 @@ router.get('/example', (req, res, next) => {
 
 // POST: /send-sms
 router.post('/send-sms', async (req, res, next) => {
-  const { To, Body } = req.body;
-  try {
-    const { MessageSid } = await client.messages.create({
-      from: cfg.twilioPhoneNumber,
-      to: To,
-      body: Body,
-    });
+  // const { To, Body } = req.body;
+  console.log(req.body);
+  // try {
+  //   const { MessageSid } = await client.messages.create({
+  //     from: cfg.twilioPhoneNumber,
+  //     to: To,
+  //     body: Body,
+  //   });
 
-    res.send({
-      status: 'success',
-      message: `SMS sent to ${req.body.To}. Message SID: ${MessageSid}`,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({
-      status: 'error',
-      message: 'Failed to send SMS. Check server logs for more details.',
-    });
-  }
+  //   res.send({
+  //     status: 'success',
+  //     message: `SMS sent to ${req.body.To}. Message SID: ${MessageSid}`,
+  //   });
+  // } catch (err) {
+  //   console.error(err);
+  //   res.status(500).send({
+  //     status: 'error',
+  //     message: 'Failed to send SMS. Check server logs for more details.',
+  //   });
+  // }
 });
 
 router.post('/message', async (req, res, next) => {
