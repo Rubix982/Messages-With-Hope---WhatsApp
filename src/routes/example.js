@@ -27,12 +27,12 @@ router.post('/send-sms', async (req, res, next) => {
   console.log(To, From, Body);
   try {
     client.messages.create({
-      from: String(To),
-      to: String(From),
+      from: `whatsapp:${cfg.twilioPhoneNumber}` ,
+      to: From,
       body: 'hey! this is the default reply. Please checkout with Saif how this can be improved. Thanks!',
     }).then((message) => {
       // console.log(message.sid)
-      res.status(200).send({
+      res.status(200).send({  
         status: 'success',
         message: `SMS sent to ${From}. Message SID: ${message.sid}`,
       })
