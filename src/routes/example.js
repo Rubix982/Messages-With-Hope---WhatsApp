@@ -40,17 +40,17 @@ router.post('/send-sms', async (req, res, next) => {
   //   })
   // }).done();
 
-  const { to, body } = req.body;
+  const { To, Body } = req.body;
   try {
-    const { sid } = await client.messages.create({
+    await client.messages.create({
       from: cfg.twilioPhoneNumber,
-      to,
-      body,
+      to: To,
+      body: Body,
     });
 
     res.send({
       status: 'success',
-      message: `SMS sent to ${req.body.to}. Message SID: ${sid}`,
+      message: `SMS sent to ${req.body.to}.`,
     });
   } catch (err) {
     console.error(err);
@@ -58,6 +58,7 @@ router.post('/send-sms', async (req, res, next) => {
       status: 'error',
       message: 'Failed to send SMS. Check server logs for more details.',
     });
-  }});
+  }
+});
 
 module.exports = router;
