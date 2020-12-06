@@ -43,7 +43,7 @@ router.post('/send-sms', async (req, res, next) => {
   const { To, Body } = req.body;
   try {
     await client.messages.create({
-      from: cfg.twilioPhoneNumber,
+      from: `whatsapp:${cfg.twilioPhoneNumber}`,
       to: To,
       body: Body,
     });
