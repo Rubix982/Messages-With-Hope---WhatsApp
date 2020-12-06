@@ -8,7 +8,7 @@ client.messages
         body: 'Hellooooo!',
         mediaUrl: ['https://res.cloudinary.com/fast-nuces/video/upload/v1607238131/test_audio_nsxszh.mp3'],
         from: `whatsapp:${cfg.twilioPhoneNumber}` ,
-        to: 'whatsapp:+923112809331'
+        to: 'whatsapp:+923172874140'
     }).then(message => { console.log(message.sid); })
     .catch(err => {console.error(err)})
 
