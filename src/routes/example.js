@@ -44,4 +44,8 @@ router.post('/send-sms', async (req, res, next) => {
   }
 });
 
+router.get('/message', async (req, res, next) => {
+  console.log(req.body);
+});
+
 module.exports = router;
