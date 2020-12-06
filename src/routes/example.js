@@ -21,40 +21,43 @@ router.get('/example', (req, res, next) => {
 
 // POST: /send-sms
 router.post('/send-sms', async (req, res, next) => {
-  const { To, From, Body } = req.body;
-  console.log(To, From, Body);
-  const responseObject = {
-    body: 'Hellooooo!',
-    from: `whatsapp:${cfg.twilioPhoneNumber}`,
-    to: `whatsapp:+923112809331`
-  }
-
-  console.log(responseObject);
-  console.log(String(responseObject.to), String(responseObject.from), String(responseObject.body))
-  console.log(responseObject.to, responseObject.from, responseObject.body)
-
-  client.messages.create(responseObject).then((message) => {
-    res.status(200).send({
-      status: 'success',
-      message: `SMS sent to ${From}. Message SID: ${message.sid}`,
-    })
-  }).done();
-
-  // try {
-  //   client.messages.create(responseObject).then((message) => {
-  //     // console.log(message.sid)
-  //     res.status(200).send({  
-  //       status: 'success',
-  //       message: `SMS sent to ${From}. Message SID: ${message.sid}`,
-  //     })
-  //   }).done();
-  // } catch (err) {
-  //   console.error(err);
-  //   res.status(500).send({
-  //     status: 'error',
-  //     message: 'Failed to send SMS. Check server logs for more details.',
-  //   });
+  // const { To, From, Body } = req.body;
+  // console.log(To, From, Body);
+  // const responseObject = {
+  //   body: 'Hellooooo!',
+  //   from: `whatsapp:${cfg.twilioPhoneNumber}`,
+  //   to: `whatsapp:+923112809331`
   // }
-});
+
+  // console.log(responseObject);
+  // console.log(String(responseObject.to), String(responseObject.from), String(responseObject.body))
+  // console.log(responseObject.to, responseObject.from, responseObject.body)
+
+  // client.messages.create(responseObject).then((message) => {
+  //   res.status(200).send({
+  //     status: 'success',
+  //     message: `SMS sent to ${From}. Message SID: ${message.sid}`,
+  //   })
+  // }).done();
+
+  const { to, body } = req.body;
+  try {
+    const { sid } = await client.messages.create({
+      from: cfg.twilioPhoneNumber,
+      to,
+      body,
+    });
+
+    res.send({
+      status: 'success',
+      message: `SMS sent to ${req.body.to}. Message SID: ${sid}`,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({
+      status: 'error',
+      message: 'Failed to send SMS. Check server logs for more details.',
+    });
+  }});
 
 module.exports = router;
