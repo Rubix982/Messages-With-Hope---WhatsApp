@@ -31,11 +31,10 @@ router.get('/example', (req, res, next) => {
 router.post('/send-sms', (req, res, next) => {
   console.log(req);
   console.log(req.body);
-  const { To, From, Body} = req.body;
+  const { To, From, Body } = req.body;
   console.log(To, From, Body);
-  const { To, Body } = req.body;
   try {
-      client.messages.create({
+    client.messages.create({
       from: 'whatsapp:' + cfg.twilioPhoneNumber,
       to: To,
       body: Body,
