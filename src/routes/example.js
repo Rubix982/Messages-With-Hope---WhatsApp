@@ -1,10 +1,8 @@
 'use strict';
 
 const express = require('express');
-const twilio = require('twilio');
 const cfg = require('../config');
-
-const client = twilio(cfg.twilioAccountSid, cfg.twilioAuthToken);
+const client = require('twilio')(cfg.twilioAccountSid, cfg.twilioAuthToken);
 
 /* eslint-disable new-cap */
 const router = express.Router();
@@ -22,13 +20,13 @@ router.get('/example', (req, res, next) => {
 });
 
 // POST: /send-sms
-router.post('/send-sms', (req, res, next) => {
+router.post('/send-sms', async (req, res, next) => {
   const { To, From, Body } = req.body;
   console.log(To, From, Body);
   const responseObject = {
+    body: 'Hellooooo!',
     from: `whatsapp:${cfg.twilioPhoneNumber}`,
-    to: From,
-    body: 'hey! this is the default reply. Please checkout with Saif how this can be improved. Thanks!'
+    to: `whatsapp:+923112809331`
   }
 
   console.log(responseObject);
