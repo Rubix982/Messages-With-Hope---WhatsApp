@@ -23,17 +23,17 @@ router.get('/example', (req, res, next) => {
 
 // POST: /send-sms
 router.post('/send-sms', async (req, res, next) => {
-  const { to, body } = req.body;
+  const { To, Body } = req.body;
   try {
-    const { sid } = await client.messages.create({
-      from: cfg.twilioPhoneNumber,
-      to,
-      body,
+    const { MessageSid } = await client.messages.create({
+      From: cfg.twilioPhoneNumber,
+      To,
+      Body,
     });
 
     res.send({
       status: 'success',
-      message: `SMS sent to ${req.body.to}. Message SID: ${sid}`,
+      message: `SMS sent to ${req.body.To}. Message SID: ${MessageSid}`,
     });
   } catch (err) {
     console.error(err);
@@ -44,12 +44,8 @@ router.post('/send-sms', async (req, res, next) => {
   }
 });
 
-router.get('/message', async (req, res, next) => {
-  console.log(req.body);
-});
-
 router.post('/message', async (req, res, next) => {
-  console.log(req.body);
+  const { To, From, Body } = req.body;
 });
 
 module.exports = router;
