@@ -16,6 +16,7 @@ let isLanguageSelected = false,
   isLanguageUrdu = false,
   allInfoFilled = false,
   locationGiven = false,
+  sessionEnd = false,
   location = {},
   totalInfo = {},
   JSONObjectForEndpoint = {
@@ -174,17 +175,8 @@ router.get("/hospital", function (_req, res) {
     .catch((error) => {
       console.log("Error Retriving Healthcare Centres", e);
     });
+
 });
-
-// router.get('/status', async (req, res, next) => {
-//   const { phone, latitude, longitude, plate, car } = req.body;
-//   const twiml = new MessagingResponse();
-
-//   twiml.message('');
-
-//   res.writeHead(200, {'Content-Type': 'text/xml'});
-//   res.end(twiml.toString());
-// })
 
 // POST: /send-sms
 router.post('/sms', async (req, res, next) => {
@@ -213,7 +205,50 @@ router.post('/sms', async (req, res, next) => {
     locationGiven = true;
   }
 
-  if (allInfoFilled && locationGiven) {
+  if (sessionEnd) {
+    isLanguageSelected = false,
+      locationReceived = false,
+      isLanguageUrdu = false,
+      allInfoFilled = false,
+      locationGiven = false,
+      sessionEnd = false,
+      location = {},
+      totalInfo = {},
+      JSONObjectForEndpoint = {
+        "caretaker": {
+          "name": 'Saif',
+          "cnic": 'abcd',
+          "contact_num": '123'
+        },
+        'patient': {
+          'name': 'a',
+          'age': 0,
+          'preexisting_conditions': ['diabetes']
+        },
+        'pickup': {
+          'position': {
+            'lat': 'a',
+            'lng': 'b'
+          },
+          'landmarks': ['c']
+        },
+        'destination': {
+          'name': 'd',
+          'position': {
+            'lat': 'e',
+            'lng': 'f'
+          },
+          'landmarks': ['g']
+        },
+        'patient_condition': 'critical',
+        'reason_for_transport': ' Heart Pain',
+        'special_needs': ['ventilator', 'oxygen'],
+        'distance': 0
+      };
+  }
+
+
+  if (allInfoFilled && locationGiven && !sessionEnd) {
 
     JSONObjectForEndpoint['caretaker']['name'] = totalInfo['caretaker_name']
     JSONObjectForEndpoint['caretaker']['cnic'] = totalInfo['caretaker_cnic']
@@ -230,7 +265,11 @@ router.post('/sms', async (req, res, next) => {
     JSONObjectForEndpoint['destination']['name'] = totalInfo['hospital'];
     JSONObjectForEndpoint['patient_condition'] = totalInfo['patient_condition']
     JSONObjectForEndpoint['reason_for_transport'] = totalInfo['reason_for_transport']
-    JSONObjectForEndpoint['special_needs'] = totalInfo['special_needs']
+
+    tempStr = totalInfo['special_needs']
+    arr = tempStr.split()
+
+    JSONObjectForEndpoint['special_needs'] = arr
 
     let url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${location.lat},${location.lon}&key=${process.env.MAPS_KEY}`;
 
@@ -298,31 +337,26 @@ router.post('/sms', async (req, res, next) => {
         console.log(response);
 
         RequestID = response['data']['data']['id']
-        // phone = response['data']['driver']['phone'];
-        // latitude = response['data']['driver']['position']['latitude'];
-        // longitude = response['data']['driver']['position']['latitude'];
-        // plate = response['data']['driver']['plate'];
-        // car = response['data']['driver']['car'];
 
-        // console.log(response)
-        // console.log(response['data']['data']['id'])
       })
       .catch(function (error) {
         console.log(error);
       });
-      
-      // twiml.message(`Your ambulance is a ${car}, with plate, ${plate}. You can contact the driver by calling at ${phone}`);
 
-      await axios.get(`https://us-central1-fb-wit-ai.cloudfunctions.net/getAmbulanceUpdate?rid=${RequestID}`)
-        .then(function (response) {
-          console.log(response);
-          twiml.message(`An ambulance has been alerted and confirmed.`)
-        })
-        .catch(function (error) {
-          twiml.message(`Unable to find an ambulance.`)
-          console.log(error);
-        });
-      
+    // twiml.message(`Your ambulance is a ${car}, with plate, ${plate}. You can contact the driver by calling at ${phone}`);
+
+    await axios.get(`https://us-central1-fb-wit-ai.cloudfunctions.net/getAmbulanceUpdate?rid=${RequestID}`)
+      .then(function (response) {
+        console.log(response);
+        twiml.message(`An ambulance has been alerted and confirmed.`)
+      })
+      .catch(function (error) {
+        twiml.message(`Unable to find an ambulance.`)
+        console.log(error);
+      });
+
+    sessionEnd = true;
+
   } else if (Body == 'restart' || Body == 'دوبارہ شروع کریں') {
     // Resetting global variables to their defaults
     // for session management
