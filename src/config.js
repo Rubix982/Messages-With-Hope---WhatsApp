@@ -13,7 +13,7 @@ if (!process.env.CI) {
 const cfg = {};
 
 // HTTP Port to run our web application
-cfg.port = process.env.PORT || 3000;
+cfg.port = process.env.PORT || 3001;
 
 // Your Twilio account SID and auth token, both found at:
 // https://www.twilio.com/user/account
