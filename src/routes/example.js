@@ -333,11 +333,7 @@ router.post('/sms', async (req, res, next) => {
 
     await axios.post('https://us-central1-fb-wit-ai.cloudfunctions.net/requestAmbulance', JSONObjectForEndpoint)
       .then(function (response) {
-
-        console.log(response);
-
         RequestID = response['data']['data']['id']
-
       })
       .catch(function (error) {
         console.log(error);
@@ -347,7 +343,6 @@ router.post('/sms', async (req, res, next) => {
 
     await axios.get(`https://us-central1-fb-wit-ai.cloudfunctions.net/getAmbulanceUpdate?rid=${RequestID}`)
       .then(function (response) {
-        console.log(response);
         twiml.message(`An ambulance has been alerted and confirmed.`)
       })
       .catch(function (error) {
