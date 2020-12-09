@@ -220,7 +220,11 @@ router.post('/sms', async (req, res, next) => {
     JSONObjectForEndpoint['caretaker']['contact_num'] = From.split(':')[1]
     JSONObjectForEndpoint['patient']['name'] = totalInfo['patient_name'];
     JSONObjectForEndpoint['patient']['age'] = totalInfo['age']
-    JSONObjectForEndpoint['patient']['preexisting_conditions'] = totalInfo['preexisting_conditions']
+
+    let tempStr = totalInfo['preexisting_conditions']
+    let arr = tempStr.split()
+
+    JSONObjectForEndpoint['patient']['preexisting_conditions'] = arr;
     JSONObjectForEndpoint['pickup']['position']['lat'] = location.lat;
     JSONObjectForEndpoint['pickup']['position']['lng'] = location.lon;
     JSONObjectForEndpoint['destination']['name'] = totalInfo['hospital'];
@@ -251,7 +255,6 @@ router.post('/sms', async (req, res, next) => {
       key: process.env.MAPS_KEY,
     };
 
-    // console.log("retrieving lat, lng for " + totalInfo['hospital']);
     await client
       .geocode({
         params: params,
@@ -285,16 +288,41 @@ router.post('/sms', async (req, res, next) => {
     const P1 = { lat: JSONObjectForEndpoint['pickup']['position']['lat'], lng: JSONObjectForEndpoint['pickup']['position']['lng'] }
     const P2 = { lat: JSONObjectForEndpoint['destination']['position']['lat'], lng: JSONObjectForEndpoint['destination']['position']['lng'] }
 
-    JSONObjectForEndpoint['distance'] = getDistance(P1, P2);
+    JSONObjectForEndpoint['distance'] = String(getDistance(P1, P2));
 
-    axios.post('https://us-central1-fb-wit-ai.cloudfunctions.net/requestAmbulance', JSONObjectForEndpoint)
+    let RequestID, phone, latitude, longitude, plate, car;
+
+    await axios.post('https://us-central1-fb-wit-ai.cloudfunctions.net/requestAmbulance', JSONObjectForEndpoint)
       .then(function (response) {
+
         console.log(response);
+
+        RequestID = response['data']['data']['id']
+        // phone = response['data']['driver']['phone'];
+        // latitude = response['data']['driver']['position']['latitude'];
+        // longitude = response['data']['driver']['position']['latitude'];
+        // plate = response['data']['driver']['plate'];
+        // car = response['data']['driver']['car'];
+
+        // console.log(response)
+        // console.log(response['data']['data']['id'])
       })
       .catch(function (error) {
         console.log(error);
       });
+      
+      // twiml.message(`Your ambulance is a ${car}, with plate, ${plate}. You can contact the driver by calling at ${phone}`);
 
+      await axios.get(`https://us-central1-fb-wit-ai.cloudfunctions.net/getAmbulanceUpdate?rid=${RequestID}`)
+        .then(function (response) {
+          console.log(response);
+          twiml.message(`An ambulance has been alerted and confirmed.`)
+        })
+        .catch(function (error) {
+          twiml.message(`Unable to find an ambulance.`)
+          console.log(error);
+        });
+      
   } else if (Body == 'restart' || Body == 'دوبارہ شروع کریں') {
     // Resetting global variables to their defaults
     // for session management
@@ -305,145 +333,117 @@ router.post('/sms', async (req, res, next) => {
     isLanguageUrdu = false
     allInfoFilled = false;
     totalInfo = {}
-  } else if (Body == 'update') {
-    // Get the response from Hassan's bhai's server from here
-
-    axios.post('https://us-central1-fb-wit-ai.cloudfunctions.net/', { content: 'update' }))
-  .then(function (response) {
-    console.log(response);
-
-    const { phone, latitude, longitude, plate, car } = req.body;
-    let firstResult = '';
-
-    let url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.MAPS_KEY}`;
-
-
-    await fetch(url)
-      .then(res => res.json())
-      .then((out) => {
-        firstResult= out['results'][0]
-      })
-      .catch(err => { throw err });
-
-
-    // twiml.message(`Your ambulance is a ${car}, with plate, ${plate}. You can contact the driver by calling at ${phone}`).persistentAction()
-
-  })
-  .catch(function (error) {
-    console.log(error);
-  });
-
   } else if (Body !== undefined && visited != true) {
-  if (Body == '1' && isLanguageSelected == false) {
-    isLanguageUrdu = false;
-    isLanguageSelected = true;
+    if (Body == '1' && isLanguageSelected == false) {
+      isLanguageUrdu = false;
+      isLanguageSelected = true;
 
-    twiml.message(`Please find the instructions to proceed in the audio format`)
-    twiml.message(``).media(`https://res.cloudinary.com/fast-nuces/video/upload/v1607450279/EnglishAudio_hgxvmc.ogg`);
-    twiml.message(englishFormTemplateForTwilio)
-  } else if (Body == '2' && isLanguageSelected == false) {
-    isLanguageUrdu = true;
-    isLanguageSelected = true;
+      twiml.message(`Please find the instructions to proceed in the audio format`)
+      twiml.message(``).media(`https://res.cloudinary.com/fast-nuces/video/upload/v1607450279/EnglishAudio_hgxvmc.ogg`);
+      twiml.message(englishFormTemplateForTwilio)
+    } else if (Body == '2' && isLanguageSelected == false) {
+      isLanguageUrdu = true;
+      isLanguageSelected = true;
 
-    twiml.message(`براہ کرم آڈیو فارمیٹ میں آگے بڑھنے کے لئے ہدایات تلاش کریں`)
-    twiml.message(``).media(`https://res.cloudinary.com/fast-nuces/video/upload/v1607450279/UrduAudio_e7trkg.ogg`);
-    twiml.message(urduFormTemplateForTwilio)
-  } else if (!Body.startsWith(`نگہداشت کرنے والے کا نام: نگہداشت کرنے والے کا نام / مریض کے ہمراہ درج کریں۔`) && isLanguageUrdu && isLanguageUrdu) {
-    let splitTokens = Body.split('۔');
+      twiml.message(`براہ کرم آڈیو فارمیٹ میں آگے بڑھنے کے لئے ہدایات تلاش کریں`)
+      twiml.message(``).media(`https://res.cloudinary.com/fast-nuces/video/upload/v1607450279/UrduAudio_e7trkg.ogg`);
+      twiml.message(urduFormTemplateForTwilio)
+    } else if (!Body.startsWith(`نگہداشت کرنے والے کا نام: نگہداشت کرنے والے کا نام / مریض کے ہمراہ درج کریں۔`) && isLanguageUrdu && isLanguageUrdu) {
+      let splitTokens = Body.split('۔');
 
-    for (let i = 0; i < splitTokens.length; ++i) {
-      splitTokens[i] = splitTokens[i].split('\n').join('');
-    }
-
-    let informationRetrieved = [];
-    let notProperlyRetrieved = [];
-
-    for (let i = 0; i < splitTokens.length; ++i) {
-      splitTokens[i] = splitTokens[i].split('\n').join('');
-      informationRetrieved.push(splitTokens[i].split(':')[1]);
-
-      // Information cleaning
-      informationRetrieved[i] = informationRetrieved[i].split(' ').join('');
-
-      let tempStr = String(informationRetrieved[i]);
-      tempStr = tempStr.trim();
-
-      informationRetrieved[i] = tempStr
-
-      if (informationRetrieved[i] == 'نگہداشت کا نام / مریض کے ہمراہ درج کریں') {
-        // Care Taker Name
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('caretaker_name' in totalInfo) && splitTokens[i].split(':')[0] == 'Care Taker Name') {
-        totalInfo['caretaker_name'] = informationRetrieved[i];
+      for (let i = 0; i < splitTokens.length; ++i) {
+        splitTokens[i] = splitTokens[i].split('\n').join('');
       }
 
-      if (informationRetrieved[i] == 'نگہداشت لینے والے کا CNIC درج کریں') {
-        // Care Taker Name
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('caretaker_cnic' in totalInfo) && splitTokens[i].split(':')[0] == 'Care Taker CNIC') {
-        totalInfo['caretaker_cnic'] = informationRetrieved[i];
+      let informationRetrieved = [];
+      let notProperlyRetrieved = [];
+
+      for (let i = 0; i < splitTokens.length; ++i) {
+        splitTokens[i] = splitTokens[i].split('\n').join('');
+        informationRetrieved.push(splitTokens[i].split(':')[1]);
+
+        // Information cleaning
+        informationRetrieved[i] = informationRetrieved[i].split(' ').join('');
+
+        let tempStr = String(informationRetrieved[i]);
+        tempStr = tempStr.trim();
+
+        informationRetrieved[i] = tempStr
+
+        if (informationRetrieved[i] == 'نگہداشت کا نام / مریض کے ہمراہ درج کریں') {
+          // Care Taker Name
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('caretaker_name' in totalInfo) && splitTokens[i].split(':')[0] == 'Care Taker Name') {
+          totalInfo['caretaker_name'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'نگہداشت لینے والے کا CNIC درج کریں') {
+          // Care Taker Name
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('caretaker_cnic' in totalInfo) && splitTokens[i].split(':')[0] == 'Care Taker CNIC') {
+          totalInfo['caretaker_cnic'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'یہاں مریض کا نام درج کریں') {
+          // Name
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('patient_name' in totalInfo) && splitTokens[i].split(':')[0] == 'Patient Name') {
+          totalInfo['patient_name'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'مریض کی عمر درج کریں') {
+          // Age
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('age' in totalInfo) && splitTokens[i].split(':')[0] == 'Age') {
+          totalInfo['age'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'جس ہسپتال تک آپ پہنچنا چاہتے ہو اس کی منزل درج کریں') {
+          // Hospital
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('hosptal' in totalInfo) && splitTokens[i].split(':')[0] == 'Hospital') {
+          totalInfo['hospital'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == "کیا یہ 'مستحکم' ہے یا یہ 'تنقیدی' ہے؟") {
+          // Patient Condition
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('patient_condition' in totalInfo) && splitTokens[i].split(':')[0] == 'Patient Condition') {
+          totalInfo['patient_condition'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'ہنگامی صورتحال کی سب سے ممکنہ وجہ درج کریں (جیسے دل ، پھیپھڑوں ، خون بہنا ، فالج وغیرہ)') {
+          // Reason For Trasnport
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('reason_for_transport' in totalInfo) && splitTokens[i].split(':')[0] == 'Reason For Transport') {
+          totalInfo['reason_for_transport'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'خصوصی ضروریات درج کریں ، اگر کوئی ہو؟') {
+          // Special needs
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('special_needs' in totalInfo) && splitTokens[i].split(':')[0] == 'Special Needs') {
+
+          totalInfo['special_needs'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'مریض کی پہلے سے موجود حالات؟') {
+          // Pre existing conditions
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('preexisting_conditions' in totalInfo) && splitTokens[i].split(':')[0] == 'Pre Existing Conditions') {
+
+          totalInfo['preexisting_conditions'] = informationRetrieved[i];
+        }
+
       }
 
-      if (informationRetrieved[i] == 'یہاں مریض کا نام درج کریں') {
-        // Name
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('patient_name' in totalInfo) && splitTokens[i].split(':')[0] == 'Patient Name') {
-        totalInfo['patient_name'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == 'مریض کی عمر درج کریں') {
-        // Age
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('age' in totalInfo) && splitTokens[i].split(':')[0] == 'Age') {
-        totalInfo['age'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == 'جس ہسپتال تک آپ پہنچنا چاہتے ہو اس کی منزل درج کریں') {
-        // Hospital
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('hosptal' in totalInfo) && splitTokens[i].split(':')[0] == 'Hospital') {
-        totalInfo['hospital'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == "کیا یہ 'مستحکم' ہے یا یہ 'تنقیدی' ہے؟") {
-        // Patient Condition
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('patient_condition' in totalInfo) && splitTokens[i].split(':')[0] == 'Patient Condition') {
-        totalInfo['patient_condition'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == 'ہنگامی صورتحال کی سب سے ممکنہ وجہ درج کریں (جیسے دل ، پھیپھڑوں ، خون بہنا ، فالج وغیرہ)') {
-        // Reason For Trasnport
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('reason_for_transport' in totalInfo) && splitTokens[i].split(':')[0] == 'Reason For Transport') {
-        totalInfo['reason_for_transport'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == 'خصوصی ضروریات درج کریں ، اگر کوئی ہو؟') {
-        // Special needs
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('special_needs' in totalInfo) && splitTokens[i].split(':')[0] == 'Special Needs') {
-
-        totalInfo['special_needs'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == 'مریض کی پہلے سے موجود حالات؟') {
-        // Pre existing conditions
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('preexisting_conditions' in totalInfo) && splitTokens[i].split(':')[0] == 'Pre Existing Conditions') {
-
-        totalInfo['preexisting_conditions'] = informationRetrieved[i];
-      }
-
-    }
-
-    if ('patient_name' in totalInfo && 'age' in totalInfo && 'caretaker_name' in totalInfo &&
-      'caretaker_cnic' in totalInfo &&
-      'hospital' in totalInfo &&
-      'reason_for_transport' in totalInfo &&
-      'preexisting_conditions' in totalInfo &&
-      'patient_condition' in totalInfo && 'special_needs' in totalInfo) {
-      twiml.message(`
+      if ('patient_name' in totalInfo && 'age' in totalInfo && 'caretaker_name' in totalInfo &&
+        'caretaker_cnic' in totalInfo &&
+        'hospital' in totalInfo &&
+        'reason_for_transport' in totalInfo &&
+        'preexisting_conditions' in totalInfo &&
+        'patient_condition' in totalInfo && 'special_needs' in totalInfo) {
+        twiml.message(`
       موصولہ اطلاع: \n
       نگہداشت کرنے والے کا نام: ${totalInfo['caretaker_name']};
       نگہداشت لینے والا CNIC: ${totalInfo['caretaker_cnic']};
@@ -455,119 +455,119 @@ router.post('/sms', async (req, res, next) => {
       خصوصی ضروریات: ${totalInfo['special_needs']};
       پہلے سے موجود حالات: ${totalInfo['preexisting_conditions']};
           `)
-      twiml.message('تمام معلومات موصول ہوگئی ہیں۔ ش')
-      twiml.message(`راہ کرم ہمیں اپنا مقام بھیجنے کے لئے تصویر میں دی گئی ہدایات پر عمل کریں۔ اس سے ایمبولینس کو جلدی سے آپ کے مقام تک پہنچنے میں مدد ملے گی۔`).media(`https://res.cloudinary.com/fast-nuces/image/upload/v1607481043/AmberInstructions_y8ycda.jpg`)
+        twiml.message('تمام معلومات موصول ہوگئی ہیں۔ ش')
+        twiml.message(`راہ کرم ہمیں اپنا مقام بھیجنے کے لئے تصویر میں دی گئی ہدایات پر عمل کریں۔ اس سے ایمبولینس کو جلدی سے آپ کے مقام تک پہنچنے میں مدد ملے گی۔`).media(`https://res.cloudinary.com/fast-nuces/image/upload/v1607481043/AmberInstructions_y8ycda.jpg`)
 
-      allInfoFilled = true;
+        allInfoFilled = true;
 
-    } else {
+      } else {
 
-      let newMessageForTwilio = '';
+        let newMessageForTwilio = '';
 
-      if (notProperlyRetrieved.length) {
-        splitTokens = [];
-        // Some informationw as not properly retrieved.
-        // Please enter the following infomartion into the form 
-        for (let i = 0; i < notProperlyRetrieved.length; i = i + 1) {
-          newMessageForTwilio += notProperlyRetrieved[i] + ';\n'
-          splitTokens.push(notProperlyRetrieved[i] + ';\n')
+        if (notProperlyRetrieved.length) {
+          splitTokens = [];
+          // Some informationw as not properly retrieved.
+          // Please enter the following infomartion into the form 
+          for (let i = 0; i < notProperlyRetrieved.length; i = i + 1) {
+            newMessageForTwilio += notProperlyRetrieved[i] + ';\n'
+            splitTokens.push(notProperlyRetrieved[i] + ';\n')
+          }
+          twiml.message(`Not all needed information was retrieved. Please try again`)
+          twiml.message(newMessageForTwilio)
         }
-        twiml.message(`Not all needed information was retrieved. Please try again`)
-        twiml.message(newMessageForTwilio)
       }
-    }
-  } else if (!Body.startsWith('Care Taker Name: Enter name of the caretaker / accompany to patient') && isLanguageSelected && !isLanguageUrdu) {
-    // console.log("Here in English!");
-    let splitTokens = Body.split(';');
+    } else if (!Body.startsWith('Care Taker Name: Enter name of the caretaker / accompany to patient') && isLanguageSelected && !isLanguageUrdu) {
+      // console.log("Here in English!");
+      let splitTokens = Body.split(';');
 
-    let informationRetrieved = [];
-    let notProperlyRetrieved = [];
+      let informationRetrieved = [];
+      let notProperlyRetrieved = [];
 
-    for (let i = 0; i < splitTokens.length; ++i) {
-      splitTokens[i] = splitTokens[i].split('\n').join('');
-      informationRetrieved.push(splitTokens[i].split(':')[1]);
+      for (let i = 0; i < splitTokens.length; ++i) {
+        splitTokens[i] = splitTokens[i].split('\n').join('');
+        informationRetrieved.push(splitTokens[i].split(':')[1]);
 
-      let tempStr = String(informationRetrieved[i]);
-      tempStr = tempStr.trim();
+        let tempStr = String(informationRetrieved[i]);
+        tempStr = tempStr.trim();
 
-      informationRetrieved[i] = tempStr
+        informationRetrieved[i] = tempStr
 
-      if (informationRetrieved[i] == 'Enter name of the caretaker / accompany to patient') {
-        // Care Taker Name
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('caretaker_name' in totalInfo) && splitTokens[i].split(':')[0] == 'Care Taker Name') {
-        totalInfo['caretaker_name'] = informationRetrieved[i];
+        if (informationRetrieved[i] == 'Enter name of the caretaker / accompany to patient') {
+          // Care Taker Name
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('caretaker_name' in totalInfo) && splitTokens[i].split(':')[0] == 'Care Taker Name') {
+          totalInfo['caretaker_name'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'Enter the CNIC of the care taker') {
+          // Care Taker Name
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('caretaker_cnic' in totalInfo) && splitTokens[i].split(':')[0] == 'Care Taker CNIC') {
+          totalInfo['caretaker_cnic'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'Enter patient name here') {
+          // Name
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('patient_name' in totalInfo) && splitTokens[i].split(':')[0] == 'Patient Name') {
+          totalInfo['patient_name'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'Enter age of the patient') {
+          // Age
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('age' in totalInfo) && splitTokens[i].split(':')[0] == 'Age') {
+          totalInfo['age'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'Enter the destination of the hospital you wish to reach') {
+          // Hospital
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('hosptal' in totalInfo) && splitTokens[i].split(':')[0] == 'Hospital') {
+          totalInfo['hospital'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'Is it \'stable\' or is it \'critical\'?') {
+          // Patient Condition
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('patient_condition' in totalInfo) && splitTokens[i].split(':')[0] == 'Patient Condition') {
+          totalInfo['patient_condition'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'Enter the most likely cause of emergency ( like heart, lungs, bleeding, stroke etc)') {
+          // Reason For Trasnport
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('reason_for_transport' in totalInfo) && splitTokens[i].split(':')[0] == 'Reason For Transport') {
+          totalInfo['reason_for_transport'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == 'Enter special needs, if there are any?') {
+          // Special needs
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('special_needs' in totalInfo) && splitTokens[i].split(':')[0] == 'Special Needs') {
+
+          totalInfo['special_needs'] = informationRetrieved[i];
+        }
+
+        if (informationRetrieved[i] == ' Any pre existing conditions of the patient?') {
+          // Pre existing conditions
+          notProperlyRetrieved.push(splitTokens[i])
+        } else if (!('preexisting_conditions' in totalInfo) && splitTokens[i].split(':')[0] == 'Pre Existing Conditions') {
+
+          // Information cleaning
+          informationRetrieved[i] = informationRetrieved[i].split(' ').join('');
+
+          totalInfo['preexisting_conditions'] = informationRetrieved[i];
+        }
       }
 
-      if (informationRetrieved[i] == 'Enter the CNIC of the care taker') {
-        // Care Taker Name
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('caretaker_cnic' in totalInfo) && splitTokens[i].split(':')[0] == 'Care Taker CNIC') {
-        totalInfo['caretaker_cnic'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == 'Enter patient name here') {
-        // Name
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('patient_name' in totalInfo) && splitTokens[i].split(':')[0] == 'Patient Name') {
-        totalInfo['patient_name'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == 'Enter age of the patient') {
-        // Age
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('age' in totalInfo) && splitTokens[i].split(':')[0] == 'Age') {
-        totalInfo['age'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == 'Enter the destination of the hospital you wish to reach') {
-        // Hospital
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('hosptal' in totalInfo) && splitTokens[i].split(':')[0] == 'Hospital') {
-        totalInfo['hospital'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == 'Is it \'stable\' or is it \'critical\'?') {
-        // Patient Condition
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('patient_condition' in totalInfo) && splitTokens[i].split(':')[0] == 'Patient Condition') {
-        totalInfo['patient_condition'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == 'Enter the most likely cause of emergency ( like heart, lungs, bleeding, stroke etc)') {
-        // Reason For Trasnport
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('reason_for_transport' in totalInfo) && splitTokens[i].split(':')[0] == 'Reason For Transport') {
-        totalInfo['reason_for_transport'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == 'Enter special needs, if there are any?') {
-        // Special needs
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('special_needs' in totalInfo) && splitTokens[i].split(':')[0] == 'Special Needs') {
-
-        totalInfo['special_needs'] = informationRetrieved[i];
-      }
-
-      if (informationRetrieved[i] == ' Any pre existing conditions of the patient?') {
-        // Pre existing conditions
-        notProperlyRetrieved.push(splitTokens[i])
-      } else if (!('preexisting_conditions' in totalInfo) && splitTokens[i].split(':')[0] == 'Pre Existing Conditions') {
-
-        // Information cleaning
-        informationRetrieved[i] = informationRetrieved[i].split(' ').join('');
-
-        totalInfo['preexisting_conditions'] = informationRetrieved[i];
-      }
-    }
-
-    if ('patient_name' in totalInfo && 'age' in totalInfo && 'caretaker_name' in totalInfo &&
-      'caretaker_cnic' in totalInfo &&
-      'hospital' in totalInfo &&
-      'reason_for_transport' in totalInfo &&
-      'preexisting_conditions' in totalInfo &&
-      'patient_condition' in totalInfo && 'special_needs' in totalInfo) {
-      twiml.message(`
+      if ('patient_name' in totalInfo && 'age' in totalInfo && 'caretaker_name' in totalInfo &&
+        'caretaker_cnic' in totalInfo &&
+        'hospital' in totalInfo &&
+        'reason_for_transport' in totalInfo &&
+        'preexisting_conditions' in totalInfo &&
+        'patient_condition' in totalInfo && 'special_needs' in totalInfo) {
+        twiml.message(`
 Information received as: \n
 Care Taker Name: ${totalInfo['caretaker_name']};
 Care Taker CNIC: ${totalInfo['caretaker_cnic']};
@@ -579,38 +579,38 @@ Reason For Transport: ${totalInfo['reason_for_transport']};
 Special Needs: ${totalInfo['special_needs']};
 Pre Existing Conditions: ${totalInfo['preexisting_conditions']};
           `)
-      visited = true;
-      twiml.message('All information has been received. Thank you.')
-      twiml.message(`Please follow the instructions in the image to send us your location to help the ambulance reach your location quickly.`).media(`https://res.cloudinary.com/fast-nuces/image/upload/v1607481043/AmberInstructions_y8ycda.jpg`)
+        visited = true;
+        twiml.message('All information has been received. Thank you.')
+        twiml.message(`Please follow the instructions in the image to send us your location to help the ambulance reach your location quickly.`).media(`https://res.cloudinary.com/fast-nuces/image/upload/v1607481043/AmberInstructions_y8ycda.jpg`)
 
-      allInfoFilled = true;
+        allInfoFilled = true;
 
-    } else {
+      } else {
 
-      let newMessageForTwilio = '';
-      if (notProperlyRetrieved.length) {
-        splitTokens = [];
-        // Some informationw as not properly retrieved.
-        // Please enter the following infomartion into the form 
-        for (let i = 0; i < notProperlyRetrieved.length; i = i + 1) {
-          newMessageForTwilio += notProperlyRetrieved[i] + ';\n'
-          splitTokens.push(notProperlyRetrieved[i] + ';\n')
+        let newMessageForTwilio = '';
+        if (notProperlyRetrieved.length) {
+          splitTokens = [];
+          // Some informationw as not properly retrieved.
+          // Please enter the following infomartion into the form 
+          for (let i = 0; i < notProperlyRetrieved.length; i = i + 1) {
+            newMessageForTwilio += notProperlyRetrieved[i] + ';\n'
+            splitTokens.push(notProperlyRetrieved[i] + ';\n')
+          }
+          twiml.message(`Not all needed information was retrieved. Please try again`)
+          twiml.message(newMessageForTwilio)
         }
-        twiml.message(`Not all needed information was retrieved. Please try again`)
-        twiml.message(newMessageForTwilio)
       }
+    } else {
+      twiml.message(`Welcome to AmbER. We'll help you to connect to a quick ambulance and hospital service. To restart the process, please reply with 'restart' `);
+      twiml.message(`امبر میں خوش آمدید۔ ہم آپ کو فوری ایمبولینس اور اسپتال سروس سے رابطہ کرنے میں مدد کریں گے۔ عمل کو دوبارہ شروع کرنے کے لئے ، براہ کرم 'دوبارہ شروع کریں' کے ساتھ جواب دیں۔`)
+      twiml.message(`To start the process, please select the language`)
+      twiml.message(`عمل شروع کرنے کے لئے ، براہ کرم زبان کا انتخاب کریں`)
+      twiml.message(`For English, reply back with 1`)
+      twiml.message(`اردو کے ل، ، 2 کے ساتھ جواب دیں`)
     }
-  } else {
-    twiml.message(`Welcome to AmbER. We'll help you to connect to a quick ambulance and hospital service. To restart the process, please reply with 'restart' `);
-    twiml.message(`امبر میں خوش آمدید۔ ہم آپ کو فوری ایمبولینس اور اسپتال سروس سے رابطہ کرنے میں مدد کریں گے۔ عمل کو دوبارہ شروع کرنے کے لئے ، براہ کرم 'دوبارہ شروع کریں' کے ساتھ جواب دیں۔`)
-    twiml.message(`To start the process, please select the language`)
-    twiml.message(`عمل شروع کرنے کے لئے ، براہ کرم زبان کا انتخاب کریں`)
-    twiml.message(`For English, reply back with 1`)
-    twiml.message(`اردو کے ل، ، 2 کے ساتھ جواب دیں`)
   }
-}
-res.writeHead(200, { 'Content-Type': 'text/xml' });
-await res.end(twiml.toString());
+  res.writeHead(200, { 'Content-Type': 'text/xml' });
+  await res.end(twiml.toString());
 });
 
 module.exports = router;
